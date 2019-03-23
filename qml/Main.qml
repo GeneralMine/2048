@@ -51,10 +51,32 @@ GameWindow {
             id: keyboardController
 
             Keys.onPressed: {
+                if(!system.desktopPlatform)
+                    return
+
                 if (event.key === Qt.Key_Left && moveRelease.running === false) {
                     event.accepted = true
+                    moveLeft()
                     moveRelease.start()
                     console.log("move Left")
+                }
+                if (event.key === Qt.Key_Right && moveRelease.running === false) {
+                    event.accepted = true
+                    moveRight()
+                    moveRelease.start()
+                    console.log("move Right")
+                }
+                if (event.key === Qt.Key_Up && moveRelease.running === false) {
+                    event.accepted = true
+                    moveUp()
+                    moveRelease.start()
+                    console.log("move Up")
+                }
+                if (event.key === Qt.Key_Down && moveRelease.running === false) {
+                    event.accepted = true
+                    moveDown()
+                    moveRelease.start()
+                    console.log("move Down")
                 }
             }
         }
@@ -98,10 +120,12 @@ GameWindow {
                         }
                         else if(Math.abs(deltax) < 30 && deltay > 30 && moveRelease.running === false){
                             console.log("move down")
+                            moveDown()
                             moveRelease.start()
                         }
                         else if(Math.abs(deltax) < 30 && deltay < -30 && moveRelease.running === false){
                             console.log("move up")
+                            moveUp()
                             moveRelease.start()
                         }
                     }
@@ -130,7 +154,6 @@ GameWindow {
             }
         }
     }
-
     function createNewTile(){
         var randomCellId = emptyCells[Math.floor(Math.random() * emptyCells.length)] // get random emptyCells
         var tileId = entityManager.createEntityFromUrlWithProperties(Qt.resolvedUrl("Tile.qml"), {"tileIndex": randomCellId}) //create new Tile with a referenceID
@@ -140,9 +163,11 @@ GameWindow {
     function merge(sourceRow){
         var i, j
         var nonEmptyTiles = [] //sourceRow without empty tiles
+        var indices = []
 
         //remove empty elements
         for(i = 0; i < sourceRow.length; i++){
+            indices[i] = nonEmptyTiles.length
             if(sourceRow[i] > 0){
                 nonEmptyTiles.push(sourceRow[i])
             }
@@ -157,6 +182,12 @@ GameWindow {
             else{
                 //comparing if values are equal/mergeable
                 if(nonEmptyTiles[i] === nonEmptyTiles[i+1]){
+                    for(j = 0; j < sourceRow.length; j++){
+                        if(indices[j] > mergedRow.length){
+                            indices[j] -= 1
+                        }
+                    }
+
                     //merge elements
                     mergedRow.push(nonEmptyTiles[i] + 1)
                     i++ //skip one element, because one got deleted
@@ -172,7 +203,7 @@ GameWindow {
             mergedRow[i] = 0
         }
         //create object with merged row array inside and return it
-        return {mergedRow : mergedRow}
+        return {mergedRow : mergedRow, indices: indices}
     }
     function getRowAt(index){
         var row = []
@@ -188,22 +219,204 @@ GameWindow {
         return row
     }
     function moveLeft(){
-        var sourceRow, mergedRow, merger
-        for(var i = 0; i < gridSizeGame; i++){
+        var isMoved = false //move happens not for a single cell but for a whole row
+        var sourceRow, mergedRow, merger, indices
+        var i, j
+
+        for(i = 0; i < gridSizeGame; i++){ //gridSizeGame is 4
             sourceRow = getRowAt(i)
             merger = merge(sourceRow)
             mergedRow = merger.mergedRow
-            console.log(mergedRow)
+            indices = merger.indices
+
+            //checks if the given row is not the same as before
+            if(!arraysIndentical(sourceRow, mergedRow)){
+                isMoved = true
+                //merges and moves tileItems elements
+                for(j = 0; j < sourceRow.length; j++){
+                    //checks if an element is not empty
+                    if(sourceRow[j] > 0 && indices[j] !== j){
+                        //checks if a merge has happened and at what position
+                        if(mergedRow[indices[j]] > sourceRow[j] && tileItems[gridSizeGame * i + indices[j]] !== null){
+                            //move, merge, increment value of the merged element
+                            tileItems[gridSizeGame * i + indices[j]].tileValue++ // incrementing the value of the tile that got merged
+                            tileItems[gridSizeGame * i + j].moveTile(gridSizeGame * i + indices[j]) // move second tile in the merge direction(will be visible only when all animations are set up)
+                            tileItems[gridSizeGame * i + j].destroyTile()
+                        } else{
+                            //move only
+                            tileItems[gridSizeGame * i + j].moveTile(gridSizeGame * i + indices[j]) // move to the new position
+                            tileItems[gridSizeGame * i + indices[j]] = tileItems[gridSizeGame * i + j] //update the element inside the array
+                        }
+                        tileItems[gridSizeGame * i + j] = null // set to empty an old position of the moved tile
+                    }
+                }
+            }
+        }
+        if(isMoved){
+            //update empty cells
+            updateEmptyCells()
+            //create new random position tile
+            createNewTile()
         }
     }
     function moveRight(){
-        var sourceRow, mergedRow, merger
-        for(var i = 0; i < gridSizeGame; i++){
+        var isMoved = false
+        var sourceRow, mergedRow, merger, indices
+        var i, j, k // k used for reversing
+
+        for(i = 0; i < gridSizeGame; i++) {
+            // reverse sourceRow
             sourceRow = getRowAt(i).reverse()
             merger = merge(sourceRow)
             mergedRow = merger.mergedRow
-            mergedRow.reverse()
-            console.log(mergedRow)
+            indices = merger.indices
+
+            if (!arraysIdentical(sourceRow,mergedRow)) {
+                isMoved = true
+                // reverse all other arrays as well
+                sourceRow.reverse()
+                mergedRow.reverse()
+                indices.reverse()
+                // recalculate the indices from the end to the start
+                for (j = 0; j < indices.length; j++)
+                    indices[j] = gridSizeGame - 1 - indices[j]
+
+                for(j = 0; j < sourceRow.length; j++) {
+                    k = sourceRow.length -1 - j
+
+                    if (sourceRow[k] > 0 && indices[k] !== k) {
+                        if (mergedRow[indices[k]] > sourceRow[k] && tileItems[gridSizeGame * i + indices[k]] !== null) {
+                            // Move and merge
+                            tileItems[gridSizeGame * i + indices[k]].tileValue++
+                            tileItems[gridSizeGame * i + k].moveTile(gridSizeGame * i + indices[k])
+                            tileItems[gridSizeGame * i + k].destroyTile()
+                        } else {
+                            // Move only
+                            tileItems[gridSizeGame * i + k].moveTile(gridSizeGame * i + indices[k])
+                            tileItems[gridSizeGame * i + indices[k]] = tileItems[gridSizeGame * i + k]
+                        }
+                        tileItems[gridSizeGame * i + k] = null
+                    }
+                }
+            }
         }
+
+        if (isMoved) {
+            // update empty cells
+            updateEmptyCells()
+            // create new random position tile
+            createNewTile()
+        }
+    }
+    function moveUp() {
+        var isMoved = false
+        var sourceRow, mergedRow, merger, indices
+        var i, j
+
+        for (i = 0; i < gridSizeGame; i++) {
+            sourceRow = getColumnAt(i)
+            merger = merge(sourceRow)
+            mergedRow = merger.mergedRow
+            indices = merger.indices
+
+            if (! arraysIdentical(sourceRow,mergedRow)) {
+                isMoved = true
+                for (j = 0; j < sourceRow.length; j++) {
+                    if (sourceRow[j] > 0 && indices[j] !== j) {
+                        // keep in mind now we are working with COLUMNS NOT ROWS!
+                        // i and j are swapped when arranging tileItems
+                        if (mergedRow[indices[j]] > sourceRow[j] && tileItems[gridSizeGame * indices[j] + i] !== null) {
+                            // Move and merge
+                            tileItems[gridSizeGame * indices[j] + i].tileValue++
+                            tileItems[gridSizeGame * j + i].moveTile(gridSizeGame * indices[j] + i)
+                            tileItems[gridSizeGame * j + i].destroyTile()
+                        } else {
+                            // just move
+                            tileItems[gridSizeGame * j + i].moveTile(gridSizeGame * indices[j] + i)
+                            tileItems[gridSizeGame * indices[j] + i] = tileItems[gridSizeGame * j + i]
+                        }
+                        tileItems[gridSizeGame * j + i] = null
+                    }
+                }
+            }
+        }
+
+        if (isMoved) {
+            // update empty cells
+            updateEmptyCells()
+            // create new random position tile
+            createNewTile()
+        }
+    }
+    function moveDown() {
+        var isMoved = false
+        var sourceRow, mergedRow, merger, indices
+        var j, k
+
+        for (var i = 0; i < gridSizeGame; i++) {
+            sourceRow = getColumnAt(i).reverse()
+            merger = merge(sourceRow)
+            mergedRow = merger.mergedRow
+            indices = merger.indices
+
+            if (! arraysIdentical(sourceRow,mergedRow)) {
+                isMoved = true
+                sourceRow.reverse()
+                mergedRow.reverse()
+                indices.reverse()
+
+                for (j = 0; j < gridSizeGame; j++)
+                    indices[j] = gridSizeGame - 1 - indices[j]
+
+                for (j = 0; j < sourceRow.length; j++) {
+                    k = sourceRow.length -1 - j
+
+                    if (sourceRow[k] > 0 && indices[k] !== k) {
+                        // keep in mind now we are working with COLUMNS NOT ROWS!
+                        // i and k will be swapped when arranging tileItems
+                        if (mergedRow[indices[k]] > sourceRow[k] && tileItems[gridSizeGame * indices[k] + i] !== null) {
+                            // Move and merge
+                            tileItems[gridSizeGame * indices[k] + i].tileValue++
+                            tileItems[gridSizeGame * k + i].moveTile(gridSizeGame * indices[k] + i)
+                            tileItems[gridSizeGame * k + i].destroyTile()
+
+                        } else {
+                            // Move only
+                            tileItems[gridSizeGame * k + i].moveTile(gridSizeGame * indices[k] + i)
+                            tileItems[gridSizeGame * indices[k] + i] = tileItems[gridSizeGame * k + i]
+                        }
+                        tileItems[gridSizeGame * k + i] = null
+                    }
+                }
+            }
+        }
+
+        if (isMoved) {
+            // update empty cells
+            updateEmptyCells()
+            // create new random position tile
+            createNewTile()
+        }
+    }
+    function getColumnAt(index){
+        var column = []
+        for(var j = 0; j < gridSizeGame; j++){
+            //if there are no titleItems at this spot push(0) to the column, else push the titleIndex value
+            if(tileItems[index + j * gridSizeGame] === null){
+                column.push(0)
+            }
+            else{
+                column.push(tileItems[index + j * gridSizeGame].tileValue)
+            }
+        }
+        return column
+    }
+    function arraysIndentical(a,b){
+        var i = a.length
+        if(i !== b.length) return false
+        while (i--) {
+            if(a[i] !== b[i]) return false
+        }
+        return true
     }
 }
