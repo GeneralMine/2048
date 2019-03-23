@@ -88,10 +88,12 @@ GameWindow {
 
                         if(deltax > 30 && Math.abs(deltay) < 30 && moveRelease.running === false){
                             console.log("move right")
+                            moveRight()
                             moveRelease.start()
                         }
                         else if(deltax < -30 && Math.abs(deltay) < 30 && moveRelease.running === false){
                             console.log("move left")
+                            moveLeft()
                             moveRelease.start()
                         }
                         else if(Math.abs(deltax) < 30 && deltay > 30 && moveRelease.running === false){
@@ -134,5 +136,74 @@ GameWindow {
         var tileId = entityManager.createEntityFromUrlWithProperties(Qt.resolvedUrl("Tile.qml"), {"tileIndex": randomCellId}) //create new Tile with a referenceID
         tileItems[randomCellId] = entityManager.getEntityById(tileId) //paste new Tile to the array
         emptyCells.splice(emptyCells.indexOf(randomCellId), 1) //remove the taken cell from emptyCell array
+    }
+    function merge(sourceRow){
+        var i, j
+        var nonEmptyTiles = [] //sourceRow without empty tiles
+
+        //remove empty elements
+        for(i = 0; i < sourceRow.length; i++){
+            if(sourceRow[i] > 0){
+                nonEmptyTiles.push(sourceRow[i])
+            }
+        }
+
+        var mergedRow = [] //row afer merge
+        for(i = 0; i < nonEmptyTiles.length; i++){
+
+            if(i === nonEmptyTiles.length - 1){ //if last element push because last element has no other to merge with
+                mergedRow.push(nonEmptyTiles[i])
+            }
+            else{
+                //comparing if values are equal/mergeable
+                if(nonEmptyTiles[i] === nonEmptyTiles[i+1]){
+                    //merge elements
+                    mergedRow.push(nonEmptyTiles[i] + 1)
+                    i++ //skip one element, because one got deleted
+                }
+                else{
+                    mergedRow.push(nonEmptyTiles[i]) //no merge
+                }
+            }
+        }
+
+        //fill empty spots with zeros
+        for(i=mergedRow.length; i < sourceRow.length; i++){
+            mergedRow[i] = 0
+        }
+        //create object with merged row array inside and return it
+        return {mergedRow : mergedRow}
+    }
+    function getRowAt(index){
+        var row = []
+        for(var j = 0; j < gridSizeGame; j++){
+            //if there are no titleItems at this spot push(0) to the row, else push the titleIndex value
+            if(tileItems[j + index * gridSizeGame] === null){
+                row.push(0)
+            }
+            else{
+                row.push(tileItems[j + index * gridSizeGame].tileValue)
+            }
+        }
+        return row
+    }
+    function moveLeft(){
+        var sourceRow, mergedRow, merger
+        for(var i = 0; i < gridSizeGame; i++){
+            sourceRow = getRowAt(i)
+            merger = merge(sourceRow)
+            mergedRow = merger.mergedRow
+            console.log(mergedRow)
+        }
+    }
+    function moveRight(){
+        var sourceRow, mergedRow, merger
+        for(var i = 0; i < gridSizeGame; i++){
+            sourceRow = getRowAt(i).reverse()
+            merger = merge(sourceRow)
+            mergedRow = merger.mergedRow
+            mergedRow.reverse()
+            console.log(mergedRow)
+        }
     }
 }
