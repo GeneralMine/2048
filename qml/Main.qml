@@ -41,5 +41,22 @@ GameWindow {
 
             GameBackground {}
         }
+        Timer {
+            id: moveRelease
+            interval: 300
+        }
+        Keys.forwardTo: keyboardController //  makeing sure that focus is automatically provided to the keyboardController.
+
+        Item {
+            id: keyboardController
+
+            Keys.onPressed: {
+                if (event.key === Qt.Key_Left && moveRelease.running === false) {
+                    event.accepted = true
+                    moveRelease.start()
+                    console.log("move Left")
+                }
+            }
+        }
     }
 }
