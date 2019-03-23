@@ -28,5 +28,13 @@ GameWindow {
             border.color: "#4A230B" // margin color
             radius: 10 // radius of the corners
         }
+        Item {
+            id: gameContainer
+            width: gridWidth
+            height: width // square so height = width
+            anchors.centerIn: parent
+
+            GameBackground {}
+        }
     }
 }
