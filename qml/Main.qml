@@ -28,7 +28,7 @@ GameWindow {
         Rectangle {
             id: background
             anchors.fill: gameScene.gameWindowAnchorItem
-            color: "#B6581A" // main color
+            color: "#2979FF" // main color
             border.width: 5
             border.color: "#4A230B" // margin color
             radius: 10 // radius of the corners

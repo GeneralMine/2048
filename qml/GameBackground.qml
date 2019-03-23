@@ -6,7 +6,7 @@ Rectangle {
   id: gameBackground
   width: gridWidth
   height: width // square so height = width
-  color: "#4A230B"
+  color: "#0D47A1"
   radius: 5
 
   // STATIONARY, IMMOVABLE orange grid
@@ -27,7 +27,7 @@ Rectangle {
           anchors.centerIn: parent
           width: parent.width-2 // -2 is our width margin offset. set 0 if no offset needed
           height: width // square so height = width
-          color: "#E99C0A"
+          color: "#FFFDE7"
           radius: 4
         }
       }
