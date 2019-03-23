@@ -106,5 +106,33 @@ GameWindow {
                 }
             }
         }
+
+        Component.onCompleted: {
+            // fill the main array with empty spaces
+            for(var i = 0; i < gridSizeGameSquared; i++){
+                tileItems[i] = null
+            }
+            //collect empty cells positions
+            updateEmptyCells()
+            //create 2 random tiles
+            createNewTile()
+            createNewTile()
+        }
+    }
+
+    function updateEmptyCells(){ //extract and save emptyCells from tileItems for later generation of new random tiles
+        emptyCells = []
+        for(var i = 0; i < gridSizeGameSquared; i++){
+            if(tileItems[i] === null){
+                emptyCells.push(i)
+            }
+        }
+    }
+
+    function createNewTile(){
+        var randomCellId = emptyCells[Math.floor(Math.random() * emptyCells.length)] // get random emptyCells
+        var tileId = entityManager.createEntityFromUrlWithProperties(Qt.resolvedUrl("Tile.qml"), {"tileIndex": randomCellId}) //create new Tile with a referenceID
+        tileItems[randomCellId] = entityManager.getEntityById(tileId) //paste new Tile to the array
+        emptyCells.splice(emptyCells.indexOf(randomCellId), 1) //remove the taken cell from emptyCell array
     }
 }
