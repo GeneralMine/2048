@@ -53,4 +53,5 @@ macx {
 }
 
 DISTFILES += \
-    qml/GameBackground.qml
+    qml/GameBackground.qml \
+    qml/Tile.qml
