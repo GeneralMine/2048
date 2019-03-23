@@ -58,5 +58,53 @@ GameWindow {
                 }
             }
         }
+        MouseArea{
+            id: mouseArea
+            anchors.fill: gameScene.gameWindowAnchorItem
+
+            property int startX //initial position X
+            property int startY //initial position Y
+
+            property string direction //of the swipe
+            property bool moving: false
+
+            onPressed: {
+                startX = mouseX
+                startY = mouseY
+                moving = false
+            }
+
+            onReleased: {
+                moving = false
+            }
+
+            onPositionChanged: {
+                var deltax = mouse.x - startX
+                var deltay = mouse.y - startY
+
+                if(moving === false){
+                    if(Math.abs(deltax) > 40 || Math.abs(deltay) > 40){
+                        moving = true
+
+                        if(deltax > 30 && Math.abs(deltay) < 30 && moveRelease.running === false){
+                            console.log("move right")
+                            moveRelease.start()
+                        }
+                        else if(deltax < -30 && Math.abs(deltay) < 30 && moveRelease.running === false){
+                            console.log("move left")
+                            moveRelease.start()
+                        }
+                        else if(Math.abs(deltax) < 30 && deltay > 30 && moveRelease.running === false){
+                            console.log("move down")
+                            moveRelease.start()
+                        }
+                        else if(Math.abs(deltax) < 30 && deltay < -30 && moveRelease.running === false){
+                            console.log("move up")
+                            moveRelease.start()
+                        }
+                    }
+                }
+            }
+        }
     }
 }
