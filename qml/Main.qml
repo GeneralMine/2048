@@ -230,7 +230,7 @@ GameWindow {
             indices = merger.indices
 
             //checks if the given row is not the same as before
-            if(!arraysIndentical(sourceRow, mergedRow)){
+            if(!arraysIdentical(sourceRow, mergedRow)){
                 isMoved = true
                 //merges and moves tileItems elements
                 for(j = 0; j < sourceRow.length; j++){
@@ -411,7 +411,7 @@ GameWindow {
         }
         return column
     }
-    function arraysIndentical(a,b){
+    function arraysIdentical(a,b){
         var i = a.length
         if(i !== b.length) return false
         while (i--) {
@@ -419,4 +419,5 @@ GameWindow {
         }
         return true
     }
+
 }
